@@ -12,7 +12,7 @@ impl Database {
     pub fn run_sql(&self, sql: &str) -> Result<Vec<String>, Error> {
         // 1. parse
         let stmts = parse(sql)?;
-
+        // 2. execute
         let mut outputs = vec![];
         for stmt in stmts {
             debug!("execute: {:#?}", stmt);
