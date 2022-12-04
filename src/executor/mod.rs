@@ -4,7 +4,9 @@ use crate::catalog::CatalogRef;
 use crate::storage::{StorageError, StorageRef};
 
 mod create;
+mod insert;
 mod select;
+mod values;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ExecuteError {
@@ -28,6 +30,7 @@ impl Executor {
         match stmt {
             BoundStatement::CreateTable(stmt) => self.execute_create_table(stmt),
             BoundStatement::Select(stmt) => self.execute_select(stmt),
+            BoundStatement::Insert(stmt) => self.execute_insert(stmt),
         }
     }
 }

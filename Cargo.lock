@@ -676,6 +676,7 @@ version = "0.1.0"
 dependencies = [
  "bitvec",
  "env_logger",
+ "itertools",
  "log",
  "prettytable-rs",
  "rustyline",

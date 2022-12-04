@@ -6,6 +6,7 @@ use crate::{array::DataChunk, types::DataValue, Database, Error};
 
 #[test_case("01-01.slt")]
 #[test_case("01-03.slt")]
+#[test_case("01-05.slt")]
 fn test(name: &str) {
     init_logger();
     let script = std::fs::read_to_string(Path::new("./sql").join(name)).unwrap();

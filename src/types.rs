@@ -1,5 +1,4 @@
 pub use sqlparser::ast::DataType as DataTypeKind;
-use sqlparser::ast::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataType {
@@ -60,23 +59,14 @@ impl ToString for DataValue {
     }
 }
 
-impl From<&Value> for DataValue {
-    fn from(v: &Value) -> Self {
-        match v {
-            Value::Number(n, _) => {
-                if let Ok(int) = n.parse::<i32>() {
-                    Self::Int32(int)
-                } else if let Ok(float) = n.parse::<f64>() {
-                    Self::Float64(float)
-                } else {
-                    panic!("invalid digit: {}", n);
-                }
-            }
-            Value::SingleQuotedString(s) => Self::String(s.clone()),
-            Value::DoubleQuotedString(s) => Self::String(s.clone()),
-            Value::Boolean(b) => Self::Bool(*b),
-            Value::Null => Self::Null,
-            _ => todo!("parse value: {:?}", v),
+impl DataValue {
+    pub fn datatype(&self) -> Option<DataType> {
+        match self {
+            Self::Bool(_) => Some(DataTypeKind::Boolean.not_null()),
+            Self::Int32(_) => Some(DataTypeKind::Int(None).not_null()),
+            Self::Float64(_) => Some(DataTypeKind::Double.not_null()),
+            Self::String(_) => Some(DataTypeKind::Varchar(None).not_null()),
+            Self::Null => None,
         }
     }
 }
