@@ -1,9 +1,12 @@
 use super::*;
-use crate::parser::{Expr, Query, SelectItem, SetExpr, Value};
+use crate::{
+    parser::{Expr, Query, SelectItem, SetExpr},
+    types::DataValue,
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoundSelect {
-    pub values: Vec<Value>,
+    pub values: Vec<DataValue>,
 }
 
 impl Binder {
@@ -13,7 +16,7 @@ impl Binder {
                 let mut values = vec![];
                 for item in &select.projection {
                     match item {
-                        SelectItem::UnnamedExpr(Expr::Value(v)) => values.push(v.clone()),
+                        SelectItem::UnnamedExpr(Expr::Value(v)) => values.push(v.into()),
                         _ => todo!("not supported statement: {:#?}", query),
                     }
                 }
