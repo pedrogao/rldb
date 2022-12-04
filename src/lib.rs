@@ -1,3 +1,6 @@
+#![deny(unused_must_use)]
+#![feature(generators)]
+
 #[macro_use]
 extern crate log;
 

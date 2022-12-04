@@ -1,5 +1,8 @@
 use std::sync::Arc;
 
+use futures::TryStreamExt;
+use tokio::runtime::Runtime;
+
 use crate::array::DataChunk;
 use crate::binder::{BindError, Binder};
 use crate::catalog::{CatalogRef, DatabaseCatalog};
@@ -12,6 +15,7 @@ use crate::storage::InMemoryStorage;
 pub struct Database {
     catalog: CatalogRef,
     executor_builder: ExecutorBuilder,
+    runtime: Runtime,
 }
 
 impl Default for Database {
@@ -24,9 +28,20 @@ impl Database {
     pub fn new() -> Self {
         let catalog = Arc::new(DatabaseCatalog::new());
         let storage = Arc::new(InMemoryStorage::new());
+        let parallel = matches!(std::env::var("RLDB_PARALLEL"), Ok(s) if s == "1");
+        let runtime = if parallel {
+            tokio::runtime::Builder::new_multi_thread()
+        } else {
+            tokio::runtime::Builder::new_current_thread()
+        }
+        .build()
+        .expect("failed to create tokio runtime");
+        let handle = parallel.then(|| runtime.handle().clone());
+
         Database {
             catalog: catalog.clone(),
-            executor_builder: ExecutorBuilder::new(catalog, storage),
+            executor_builder: ExecutorBuilder::new(catalog, storage, handle),
+            runtime,
         }
     }
 
@@ -46,8 +61,13 @@ impl Database {
             let physical_plan = physical_planner.plan(&logical_plan)?;
             debug!("{:#?}", physical_plan);
             let mut executor = self.executor_builder.build(physical_plan);
-            let output = executor.execute()?;
-            outputs.push(output);
+
+            self.runtime.block_on(async {
+                while let Some(chunk) = executor.try_next().await? {
+                    outputs.push(chunk);
+                }
+                Ok(()) as Result<(), Error>
+            })?;
         }
 
         Ok(outputs)
