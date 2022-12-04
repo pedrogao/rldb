@@ -8,7 +8,6 @@ use crate::catalog::{ColumnCatalog, ColumnId, TableCatalog};
 use crate::parser::{SetExpr, Statement};
 use crate::types::{DataType, DataTypeKind};
 
-/// A bound `INSERT` statement.
 #[derive(Debug, PartialEq, Clone)]
 pub struct BoundInsert {
     pub table_ref_id: TableRefId,
@@ -96,8 +95,7 @@ impl Binder {
         })
     }
 
-    /// Bind `table_name [ (column_name [, ...] ) ]`
-    pub(super) fn bind_table_columns(
+    pub fn bind_table_columns(
         &mut self,
         table_name: &ObjectName,
         columns: &[Ident],

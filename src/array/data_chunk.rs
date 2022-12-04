@@ -1,6 +1,8 @@
 use std::fmt;
 use std::sync::Arc;
 
+use itertools::Itertools;
+
 use super::*;
 
 #[derive(PartialEq, Clone)]
@@ -36,6 +38,21 @@ impl DataChunk {
 
     pub fn arrays(&self) -> &[ArrayImpl] {
         &self.arrays
+    }
+
+    pub fn concat(chunks: &[DataChunk]) -> Self {
+        assert!(!chunks.is_empty(), "must concat at least one chunk");
+        let mut builders = chunks[0]
+            .arrays()
+            .iter()
+            .map(ArrayBuilderImpl::from_type_of_array)
+            .collect_vec();
+        for chunk in chunks {
+            for (array, builder) in chunk.arrays.iter().zip(builders.iter_mut()) {
+                builder.append(array);
+            }
+        }
+        builders.into_iter().map(|b| b.finish()).collect()
     }
 }
 

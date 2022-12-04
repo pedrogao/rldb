@@ -21,6 +21,9 @@ pub enum LogicalPlan {
     LogicalInsert,
     LogicalValues,
     LogicalExplain,
+    LogicalDummy,
+    LogicalGet,
+    LogicalProjection,
 }
 
 pub type LogicalPlanRef = Rc<LogicalPlan>;

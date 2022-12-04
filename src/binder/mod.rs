@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::vec::Vec;
 
 use crate::catalog::*;
@@ -5,9 +6,11 @@ use crate::parser::{Ident, ObjectName, Statement};
 
 mod expression;
 mod statement;
+mod table_ref;
 
 pub use self::expression::*;
 pub use self::statement::*;
+pub use self::table_ref::*;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum BoundStatement {
@@ -33,6 +36,10 @@ pub enum BindError {
     DuplicatedColumn(String),
     #[error("invalid table name: {0:?}")]
     InvalidTableName(Vec<Ident>),
+    #[error("duplicated alias: {0}")]
+    DuplicatedAlias(String),
+    #[error("ambiguous column name: {0}")]
+    AmbiguousColumnName(String),
     #[error("not nullable column: {0}")]
     NotNullableColumn(String),
     #[error("tuple length mismatch: expected {expected} but got {actual}")]
@@ -41,25 +48,31 @@ pub enum BindError {
     NullValueInColumn(String),
 }
 
+type TableName = String;
+
 pub struct Binder {
     catalog: CatalogRef,
+    tables: HashMap<TableName, TableRefId>,
 }
 
 impl Binder {
     pub fn new(catalog: CatalogRef) -> Self {
-        Binder { catalog }
+        Binder {
+            catalog,
+            tables: HashMap::default(),
+        }
     }
 
     pub fn bind(&mut self, stmt: &Statement) -> Result<BoundStatement, BindError> {
-        use Statement::*;
-
         match stmt {
-            CreateTable { .. } => Ok(BoundStatement::CreateTable(self.bind_create_table(stmt)?)),
-            Insert { .. } => Ok(BoundStatement::Insert(self.bind_insert(stmt)?)),
-            Query(query) => Ok(BoundStatement::Select(self.bind_select(query)?)),
-            Explain { statement, .. } => {
+            Statement::CreateTable { .. } => {
+                Ok(BoundStatement::CreateTable(self.bind_create_table(stmt)?))
+            }
+            Statement::Insert { .. } => Ok(BoundStatement::Insert(self.bind_insert(stmt)?)),
+            Statement::Explain { statement, .. } => {
                 Ok(BoundStatement::Explain(self.bind(&*statement)?.into()))
             }
+            Statement::Query(query) => Ok(BoundStatement::Select(self.bind_select(&*query)?)),
             _ => todo!("bind statement: {:#?}", stmt),
         }
     }

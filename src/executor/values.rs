@@ -3,7 +3,7 @@ use itertools::Itertools;
 use super::*;
 use crate::array::{ArrayBuilderImpl, DataChunk};
 use crate::binder::BoundExpr;
-use crate::types::{DataType, DataValue};
+use crate::types::DataType;
 
 pub struct ValuesExecutor {
     pub column_types: Vec<DataType>,
@@ -29,14 +29,6 @@ impl Executor for ValuesExecutor {
             .map(|builder| builder.finish())
             .collect::<DataChunk>();
         Ok(chunk)
-    }
-}
-
-impl BoundExpr {
-    pub fn eval_const(&self) -> Result<DataValue, ExecuteError> {
-        match self {
-            Self::Constant(v) => Ok(v.clone()),
-        }
     }
 }
 

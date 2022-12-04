@@ -8,7 +8,7 @@ mod primitive_array;
 mod utf8_array;
 
 pub use self::data_chunk::*;
-pub use self::iter::*;
+pub use self::iter::ArrayIter;
 pub use self::primitive_array::*;
 pub use self::utf8_array::*;
 
@@ -25,24 +25,18 @@ pub trait ArrayBuilder: Send + Sync + 'static {
 }
 
 pub trait Array: Sized + Send + Sync + 'static {
-    /// Corresponding builder of this array.
     type Builder: ArrayBuilder<Array = Self>;
 
-    /// Type of element in the array.
     type Item: ToOwned + ?Sized;
 
-    /// Retrieve a reference to value.
     fn get(&self, idx: usize) -> Option<&Self::Item>;
 
-    /// Number of items of array.
     fn len(&self) -> usize;
 
-    /// Get iterator of current array.
     fn iter(&self) -> ArrayIter<'_, Self> {
         ArrayIter::new(self)
     }
 
-    /// Check if the array has a length of 0.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -112,7 +106,6 @@ impl_into! { PrimitiveArray<f64>, Float64 }
 impl_into! { Utf8Array, Utf8 }
 
 impl ArrayBuilderImpl {
-    /// Create a new array builder from data type.
     pub fn with_capacity(capacity: usize, ty: &DataType) -> Self {
         match ty.kind() {
             DataTypeKind::Boolean => Self::Bool(BoolArrayBuilder::with_capacity(capacity)),
@@ -127,7 +120,15 @@ impl ArrayBuilderImpl {
         }
     }
 
-    /// Appends an element to the back of array.
+    pub fn from_type_of_array(array: &ArrayImpl) -> Self {
+        match array {
+            ArrayImpl::Bool(_) => Self::Bool(BoolArrayBuilder::with_capacity(0)),
+            ArrayImpl::Int32(_) => Self::Int32(I32ArrayBuilder::with_capacity(0)),
+            ArrayImpl::Float64(_) => Self::Float64(F64ArrayBuilder::with_capacity(0)),
+            ArrayImpl::Utf8(_) => Self::Utf8(Utf8ArrayBuilder::with_capacity(0)),
+        }
+    }
+
     pub fn push(&mut self, v: &DataValue) {
         match (self, v) {
             (Self::Bool(a), DataValue::Bool(v)) => a.push(Some(v)),
@@ -142,7 +143,6 @@ impl ArrayBuilderImpl {
         }
     }
 
-    /// Appends a [`ArrayImpl`].
     pub fn append(&mut self, array_impl: &ArrayImpl) {
         match (self, array_impl) {
             (Self::Bool(builder), ArrayImpl::Bool(arr)) => builder.append(arr),
@@ -153,7 +153,6 @@ impl ArrayBuilderImpl {
         }
     }
 
-    /// Finish build and return a new array.
     pub fn finish(self) -> ArrayImpl {
         match self {
             Self::Bool(a) => ArrayImpl::Bool(a.finish()),
@@ -165,7 +164,6 @@ impl ArrayBuilderImpl {
 }
 
 impl ArrayImpl {
-    /// Get the value at the given index.
     pub fn get(&self, idx: usize) -> DataValue {
         match self {
             Self::Bool(a) => match a.get(idx) {
@@ -187,7 +185,6 @@ impl ArrayImpl {
         }
     }
 
-    /// Number of items of array.
     pub fn len(&self) -> usize {
         match self {
             Self::Bool(a) => a.len(),
@@ -197,21 +194,7 @@ impl ArrayImpl {
         }
     }
 
-    /// Check if array is empty.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-}
-
-/// Create a single element array from data value.
-impl From<&DataValue> for ArrayImpl {
-    fn from(val: &DataValue) -> Self {
-        match val {
-            DataValue::Null => Self::Int32([None].into_iter().collect()),
-            &DataValue::Bool(v) => Self::Bool([v].into_iter().collect()),
-            &DataValue::Int32(v) => Self::Int32([v].into_iter().collect()),
-            &DataValue::Float64(v) => Self::Float64([v].into_iter().collect()),
-            DataValue::String(v) => Self::Utf8([Some(v)].into_iter().collect()),
-        }
     }
 }
