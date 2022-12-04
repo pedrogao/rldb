@@ -4,6 +4,7 @@ extern crate log;
 #[cfg(test)]
 mod test;
 
+pub mod binder;
 pub mod catalog;
 pub mod db;
 pub mod executor;

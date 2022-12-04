@@ -21,7 +21,7 @@ impl Default for DatabaseCatalog {
 }
 
 impl DatabaseCatalog {
-    fn new() -> DatabaseCatalog {
+    pub fn new() -> DatabaseCatalog {
         let db_catalog = DatabaseCatalog {
             inner: Mutex::new(Inner::default()),
         };
