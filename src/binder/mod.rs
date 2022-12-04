@@ -14,6 +14,7 @@ pub enum BoundStatement {
     CreateTable(BoundCreateTable),
     Select(BoundSelect),
     Insert(BoundInsert),
+    Explain(Box<BoundStatement>),
 }
 
 #[derive(thiserror::Error, Debug, PartialEq)]
@@ -56,6 +57,9 @@ impl Binder {
             CreateTable { .. } => Ok(BoundStatement::CreateTable(self.bind_create_table(stmt)?)),
             Insert { .. } => Ok(BoundStatement::Insert(self.bind_insert(stmt)?)),
             Query(query) => Ok(BoundStatement::Select(self.bind_select(query)?)),
+            Explain { statement, .. } => {
+                Ok(BoundStatement::Explain(self.bind(&*statement)?.into()))
+            }
             _ => todo!("bind statement: {:#?}", stmt),
         }
     }

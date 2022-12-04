@@ -38,7 +38,6 @@ impl DataType {
     }
 }
 
-/// The catalog of a column.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ColumnCatalog {
     id: ColumnId,

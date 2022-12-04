@@ -2,13 +2,22 @@ use itertools::Itertools;
 
 use super::*;
 use crate::array::{ArrayBuilderImpl, DataChunk};
-use crate::binder::BoundInsert;
+use crate::catalog::{ColumnId, TableRefId};
+use crate::storage::StorageRef;
 use crate::types::{DataType, DataValue};
 
-impl Executor {
-    pub fn execute_insert(&self, stmt: BoundInsert) -> Result<DataChunk, ExecuteError> {
-        let table = self.storage.get_table(stmt.table_ref_id)?;
-        let catalog = self.catalog.get_table(stmt.table_ref_id).unwrap();
+pub struct InsertExecutor {
+    pub table_ref_id: TableRefId,
+    pub column_ids: Vec<ColumnId>,
+    pub catalog: CatalogRef,
+    pub storage: StorageRef,
+    pub child: BoxedExecutor,
+}
+
+impl Executor for InsertExecutor {
+    fn execute(&mut self) -> Result<DataChunk, ExecuteError> {
+        let table = self.storage.get_table(self.table_ref_id)?;
+        let catalog = self.catalog.get_table(self.table_ref_id).unwrap();
         // Describe each column of the output chunks.
         // example:
         //    columns = [0: Int, 1: Bool, 3: Float, 4: String]
@@ -18,7 +27,7 @@ impl Executor {
             .all_columns()
             .values()
             .map(
-                |col| match stmt.column_ids.iter().position(|&id| id == col.id()) {
+                |col| match self.column_ids.iter().position(|&id| id == col.id()) {
                     Some(index) => Column::Pick { index },
                     None => Column::Null {
                         type_: col.datatype(),
@@ -26,7 +35,7 @@ impl Executor {
                 },
             )
             .collect_vec();
-        let chunk = self.execute_values(stmt)?;
+        let chunk = self.child.execute()?;
         let count = chunk.cardinality();
         table.append(transform_chunk(chunk, &output_columns))?;
         Ok(DataChunk::single(count as i32))
