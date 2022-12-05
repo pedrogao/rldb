@@ -37,11 +37,13 @@ impl InsertExecutor {
             )
             .collect_vec();
         let mut count = 0;
+        let mut txn = table.write().await?;
+
         #[for_await]
         for chunk in self.child {
             let chunk = transform_chunk(chunk?, &output_columns);
             count += chunk.cardinality();
-            table.append(chunk)?;
+            txn.append(chunk).await?;
         }
         yield DataChunk::single(count as i32);
     }

@@ -1,19 +1,22 @@
 use std::path::Path;
 
 use test_case::test_case;
+use tempfile::tempdir;
 
-use crate::{array::DataChunk, types::DataValue, Database, Error};
+use crate::{array::DataChunk, storage::StorageOptions, types::DataValue, Database, Error};
 
-#[test_case("01-01.slt")]
-#[test_case("01-03.slt")]
-#[test_case("01-05.slt")]
-#[test_case("01-06.slt")]
-#[test_case("01-07.slt")]
+#[test_case("03-01.slt")]
+#[test_case("03-02.slt")]
 fn test(name: &str) {
     init_logger();
     let script = std::fs::read_to_string(Path::new("./sql").join(name)).unwrap();
-    let mut tester = sqllogictest::Runner::new(Database::new());
-    tester.run_script(&script).unwrap();
+    let tempdir = tempdir().unwrap();
+    let mut tester = sqllogictest::Runner::new(Database::new(StorageOptions {
+        base_path: tempdir.path().into(),
+    }));
+    if let Err(err) = tester.run_script(&script) {
+        panic!("{}", err);
+    }
 }
 
 impl sqllogictest::DB for Database {

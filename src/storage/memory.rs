@@ -1,18 +1,12 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock};
 
+use anyhow::anyhow;
+
+use super::*;
 use crate::array::DataChunk;
 use crate::catalog::TableRefId;
 
-#[derive(thiserror::Error, Debug)]
-pub enum StorageError {
-    #[error("table not found: {0:?}")]
-    NotFound(TableRefId),
-}
-
-pub type StorageResult<T> = std::result::Result<T, StorageError>;
-
-pub type StorageRef = Arc<InMemoryStorage>;
 pub type InMemoryTableRef = Arc<InMemoryTable>;
 
 pub struct InMemoryStorage {
@@ -44,7 +38,7 @@ impl InMemoryStorage {
             .unwrap()
             .get(&id)
             .cloned()
-            .ok_or(StorageError::NotFound(id))
+            .ok_or(anyhow!("table not found: {:?}", id).into())
     }
 }
 

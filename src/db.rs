@@ -10,7 +10,7 @@ use crate::executor::{ExecuteError, ExecutorBuilder};
 use crate::logical_planner::{LogicalPlanError, LogicalPlanner};
 use crate::parser::{parse, ParserError};
 use crate::physical_planner::{PhysicalPlanError, PhysicalPlanner};
-use crate::storage::InMemoryStorage;
+use crate::storage::{DiskStorage, StorageOptions};
 
 pub struct Database {
     catalog: CatalogRef,
@@ -18,16 +18,10 @@ pub struct Database {
     runtime: Runtime,
 }
 
-impl Default for Database {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Database {
-    pub fn new() -> Self {
+    pub fn new(options: StorageOptions) -> Self {
         let catalog = Arc::new(DatabaseCatalog::new());
-        let storage = Arc::new(InMemoryStorage::new());
+        let storage = Arc::new(DiskStorage::new(options));
         let parallel = matches!(std::env::var("RLDB_PARALLEL"), Ok(s) if s == "1");
         let runtime = if parallel {
             tokio::runtime::Builder::new_multi_thread()

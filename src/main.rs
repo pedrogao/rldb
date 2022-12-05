@@ -1,3 +1,4 @@
+use rldb::storage::StorageOptions;
 use rldb::Database;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
@@ -5,7 +6,9 @@ use rustyline::Editor;
 fn main() {
     env_logger::init();
 
-    let db = Database::new();
+    let db = Database::new(StorageOptions {
+        base_path: "./risinglight".into(),
+    });
     let mut rl = Editor::<()>::new().expect("new line editor error");
 
     loop {
