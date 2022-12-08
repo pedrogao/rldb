@@ -58,12 +58,16 @@ impl DataChunk {
 
 impl fmt::Display for DataChunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use prettytable::{format, Table};
+        use comfy_table::{Row, Table};
         let mut table = Table::new();
-        table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+        table.load_preset("||--+-++|    ++++++");
         for i in 0..self.cardinality() {
-            let row = self.arrays.iter().map(|a| a.get(i).to_string()).collect();
-            table.add_row(row);
+            let row = self
+                .arrays
+                .iter()
+                .map(|a| a.get(i).to_string())
+                .collect::<Vec<String>>();
+            table.add_row(Row::from(row));
         }
         write!(f, "{}", table)
     }

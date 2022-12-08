@@ -7,7 +7,7 @@ fn main() {
     env_logger::init();
 
     let db = Database::new(StorageOptions {
-        base_path: "./risinglight".into(),
+        base_path: "risinglight.db".into(),
     });
     let mut rl = Editor::<()>::new().expect("new line editor error");
 
@@ -20,14 +20,15 @@ fn main() {
                 match ret {
                     Ok(chunks) => {
                         for chunk in chunks {
-                            println!("{}", chunk);
+                            println!("{:?}", chunk);
                         }
                     }
                     Err(err) => println!("{}", err),
                 }
             }
             Err(ReadlineError::Interrupted) => {
-                println!("Interrupted");
+                println!("Bye!");
+                break;
             }
             Err(ReadlineError::Eof) => {
                 println!("Exited");
