@@ -45,6 +45,8 @@ impl InsertExecutor {
             count += chunk.cardinality();
             txn.append(chunk).await?;
         }
+        txn.commit().await?;
+
         yield DataChunk::single(count as i32);
     }
 }

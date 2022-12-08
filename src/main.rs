@@ -20,7 +20,7 @@ fn main() {
                 match ret {
                     Ok(chunks) => {
                         for chunk in chunks {
-                            println!("{:?}", chunk);
+                            println!("{}", chunk);
                         }
                     }
                     Err(err) => println!("{}", err),
